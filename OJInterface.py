@@ -43,7 +43,7 @@ class POJ:
         self.username,self.password,self.problem=\
             config['username'],config['password'],config['problem']
         self.log=log
-        log('正在登录... ')
+        log('正在以 %s 登录... '%self.username)
         
         cookie=urllib.request.HTTPCookieProcessor()
         self.opener=urllib.request.build_opener(cookie)
@@ -146,7 +146,7 @@ class HUST:
         self.log=log
         if self.url.endswith('/'):
             self.url=self.url[:-1]
-        log('正在登录... ')
+        log('正在以 %s 登录... '%self.username)
         
         cookie=urllib.request.HTTPCookieProcessor()
         self.opener=urllib.request.build_opener(cookie)

@@ -1,10 +1,28 @@
 #coding=utf-8
-import interface
+import OJInterface as interface
 import json
 
 ojs=interface.valid_ojs
+killed=False
 
-def init(oj_name,config,log1=lambda a,b:print(a),log2=print,\
+class OJWrapper:
+    ojs=[]
+    ind=0
+    
+    def __init__(self,OJClass,configs,log2):
+        for config in configs:
+            self.ojs.append(OJClass(log2,config))
+        self.len_ojs=len(self.ojs)
+        log('用户池中有 %d 个登录凭据'%self.len_ojs)
+    
+    def update(self,source):
+        if killed:
+            raise interface.Error('任务中断')
+        
+        self.ind=(self.ind+1)%self.len_ojs
+        return self.ojs[self.ind].update(source)
+
+def init(oj_name,configs,log1=lambda a,b:print(a),log2=print,\
          stat_function=(lambda *_:None)):
     global known_turns
     global current_length
@@ -18,7 +36,9 @@ def init(oj_name,config,log1=lambda a,b:print(a),log2=print,\
     log=log1
     stat=stat_function
 
-    oj=interface.valid_ojs[oj_name](log2,config)
+    if not isinstance(configs,(tuple,list)):
+        configs=[configs]
+    oj=OJWrapper(interface.valid_ojs[oj_name],configs,log2)
 
 base_code='''
 #include<cstdio>
@@ -60,7 +80,7 @@ if(OK(i,(char*)"[DATA]")){printf("%s","[OUTPUT]");return 0;}
 def get_len():
     log('获取长度...')
     i,j=0,125
-    while j>=1:
+    while j>=1:      
         r=oj.update(base_code.replace('[BASE]',\
             len_code%(i+j,i+2*j,i+3*j,i+4*j)))
         i,j=i+r*j,j//5
@@ -73,10 +93,10 @@ def get_len():
         known_bytes=[None for _ in range(i)]
         return i
     
-def get_bit(ind):
+def get_bit(ind):    
     log('获取第 %d 位...'%(ind+1))
     i,j=0,25
-    while j>=1:
+    while j>=1:      
         r=oj.update(base_code.replace('[BASE]',\
             (bit_code%(i+j,i+2*j,i+3*j,i+4*j)).replace('[IND]',str(ind))))
         i,j=i+r*j,j//5
@@ -101,6 +121,7 @@ def update_turn(data,output):
         current_length=-1
         global known_bytes
         known_bytes=[]
+        stat('turn',None)
         return True
     else:
         return False
@@ -132,13 +153,11 @@ def save():
 
 def load(config):
     data=json.loads(config)
-    global known_turns
-    known_turns=data['known_turns']
     global current_length
     current_length=data['current_length']
     global known_bytes
     known_bytes=data['known_bytes']
-    for a in known_turns:
-        if not update_turn(a):
+    for a in data['known_turns']:
+        if not update_turn(*a):
             log('输出不正确: %s'%(a,))
 
