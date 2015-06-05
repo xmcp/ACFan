@@ -237,20 +237,9 @@ class HUST:
                 self.log('结果是 %s\n'%result)
                 return result
         raise Error('超时')
-    
-
-class Demo:
-    def __init__(self,log,config):
-        self.log=log
-
-    def update(self,source):
-        self.log('The source is')
-        self.log(source)
-        return int(input('Please input the result: '))
 
 
 valid_ojs={
     'POJ':POJ,
-    'Local OJ':Demo,
     'HustOJ':HUST,
 }
