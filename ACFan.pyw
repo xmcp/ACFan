@@ -147,7 +147,7 @@ t1.grid(row=1,column=0,columnspan=2,sticky='nswe')
 sbar1=Scrollbar(tk,orient=VERTICAL,command=t1.yview)
 sbar1.grid(row=1,column=2,sticky='ns')
 t1['yscrollcommand']=sbar1.set
-tk.rowconfigure(1,weight=2)
+tk.rowconfigure(1,weight=3)
 
 t1.tag_config('blue',foreground='blue',background=T1BG)
 t1.tag_config('green',foreground='black',background='#00FF00')

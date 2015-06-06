@@ -5,6 +5,10 @@ import json
 ojs=interface.valid_ojs
 killed=False
 
+known_turns=[]
+current_length=-1
+known_bytes=[]
+
 class OJWrapper:
     ojs=[]
     ind=0
@@ -23,24 +27,10 @@ class OJWrapper:
         return self.ojs[self.ind].update(source)
 
 def init(oj_name,configs,log1=lambda a,b:print(a),log2=lambda a:print(a,end=''),stat_function=lambda *_:None):
-    """初始化，在使用其它功能之前都应初始化
-    
-    :param oj_name: OJ的名字，可以通过ACFramework.ojs获得
-    :param configs: OJ配置，不同的interface不太一样，也可以是由多组OJ配置组成的list
-    
-    示例：init('POJ',[
-        {'username':'user1','password':'123','problem':'1000'},
-        {'username':'user2','password':'123','problem':'1000'}])
-    """
-    global known_turns
-    global current_length
-    global known_bytes
     global log
     global oj
     global stat
-    known_turns=[]
-    current_length=-1
-    known_bytes=[]
+    
     log=log1
     stat=stat_function
 

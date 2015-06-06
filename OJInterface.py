@@ -137,7 +137,7 @@ class POJ:
             except:
                 pass
 
-class HUST:
+class Hust:
     _last_submit=0
     
     def __init__(self,log,config):
@@ -146,13 +146,15 @@ class HUST:
         self.log=log
         if self.url.endswith('/'):
             self.url=self.url[:-1]
+        if '://' not in self.url:
+            self.url='http://'+self.url
         log('正在以 %s 登录... '%self.username)
         
         cookie=urllib.request.HTTPCookieProcessor()
         self.opener=urllib.request.build_opener(cookie)
         
         result=self.opener.open(urllib.request.Request(
-            url='http://%s/login.php'%self.url,
+            url='%s/login.php'%self.url,
             data=urllib.parse.urlencode({
                 'user_id':self.username,
                 'password':self.password,
@@ -173,7 +175,7 @@ class HUST:
         
         self.log('正在提交... ')
         result=self.opener.open(urllib.request.Request(
-            url='http://%s/submit.php'%self.url,
+            url='%s/submit.php'%self.url,
             data=urllib.parse.urlencode({
                 'id':self.problem,
                 'language':'1',
@@ -214,11 +216,11 @@ class HUST:
         
         self.log('查询中... ')
         response=bs4.BeautifulSoup(self.opener.open(urllib.request.Request(
-            url='http://{url}/status.php?problem_id={p}&user_id={u}&language=1&jresult=-1'\
+            url='{url}/status.php?problem_id={p}&user_id={u}&language=1&jresult=-1'\
                 .format(url=self.url,p=self.problem,u=self.username),
             )).read(),'html5lib')
         try:
-            return _proc(response.findAll('tbody')[1].find('tr').findAll('td')\
+            return _proc(response.findAll('tbody')[-1].find('tr').findAll('td')\
                 [3].text)
         except Exception as e:
             if isinstance(e,(Error,Accepted)):
@@ -241,5 +243,5 @@ class HUST:
 
 valid_ojs={
     'POJ':POJ,
-    'HustOJ':HUST,
+    'HustOJ':Hust,
 }
