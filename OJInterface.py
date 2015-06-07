@@ -4,6 +4,8 @@ import urllib.request
 import urllib.parse
 import bs4
 import time
+import socket
+
 
 class Accepted(Exception):
     pass
@@ -15,6 +17,7 @@ class Error(Exception):
         return self.s
 
 WA,TLE,MLE,RE,OLE=0,1,2,3,4
+
 
 class POJ:
     _status={
@@ -137,6 +140,7 @@ class POJ:
             except:
                 pass
 
+
 class Hust:
     _last_submit=0
     
@@ -241,7 +245,51 @@ class Hust:
         raise Error('超时')
 
 
+class Sock:
+    def __init__(self,log,config):
+        self.port=int(config['port'])
+        self.host=config['host']
+        self.log=log
+        log('请在 %s 上绑定 %d 端口\n'%(self.host,self.port))
+        try:
+            s=socket.socket()
+            s.connect((self.host,self.port))
+            s.send(b'[SocketOJ Connected]\n')
+        except Exception as e:
+            log(e)
+            raise Error('连接远端失败')
+        else:
+            self.s=s
+
+    def update(self,source):
+        try:
+            self.log('正在发送代码... ')
+            self.s.send(b'[PLEASE JUDGE]\n')
+            self.s.send(source.encode())
+            self.log('已发送，请在远端输入结果... ')
+            while True:
+                self.s.send(b'\n[WA,TLE,MLE,RE,OLE,AC,ERR]: ')
+                result=self.s.recv(4096).decode('utf-8',errors='ignore').rstrip()
+                if result.upper()=='AC':
+                    raise Accepted()
+                elif result.upper().startswith('ERR'):
+                    raise Error(result[3:].lstrip())
+                elif result.upper() in ['WA','TLE','MLE','RE','OLE']:
+                    self.log('结果是 %s\n'%result.upper())
+                    return eval(result.upper())
+                else:
+                    self.s.send(b'Unsupported Result.')
+        except Exception as e:
+            if not isinstance(e,(Error,Accepted)):
+                self.log(e)
+                raise Error('数据传输失败')
+            else:
+                raise
+
+
 valid_ojs={
     'POJ':POJ,
     'HustOJ':Hust,
+    'SocketOJ':Sock,
 }
+
