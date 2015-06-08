@@ -1,4 +1,6 @@
 #coding=utf-8
+import sys
+assert sys.version[0]!='2', 'Please Use Python3'
 
 import urllib.request
 import urllib.parse
@@ -20,6 +22,12 @@ WA,TLE,MLE,RE,OLE=0,1,2,3,4
 
 
 class POJ:
+    default_var='''{
+    "username":"",
+    "password":"",
+    "problem":1000
+}'''
+    
     _status={
         'Waiting':-3,
         'Compiling':-2,
@@ -142,6 +150,13 @@ class POJ:
 
 
 class Hust:
+    default_var='''{
+"username":"",
+"password":"",
+"problem":1000,
+"url":"http://hustoj.sinaapp.com"
+}'''
+    
     _last_submit=0
     
     def __init__(self,log,config):
@@ -246,9 +261,16 @@ class Hust:
 
 
 class Sock:
+    default_var='''{
+"host":"127.0.0.1",
+"port":0,
+"cls":50
+}'''
+    
     def __init__(self,log,config):
         self.port=int(config['port'])
         self.host=config['host']
+        self.cls=config.get('cls',50)
         self.log=log
         log('请在 %s 上绑定 %d 端口\n'%(self.host,self.port))
         try:
@@ -264,6 +286,7 @@ class Sock:
     def update(self,source):
         try:
             self.log('正在发送代码... ')
+            self.s.send(b'\n'*self.cls)
             self.s.send(b'[PLEASE JUDGE]\n')
             self.s.send(source.encode())
             self.log('已发送，请在远端输入结果... ')

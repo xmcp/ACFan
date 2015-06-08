@@ -1,4 +1,7 @@
 #coding=utf-8
+import sys
+assert sys.version[0]!='2', 'Please Use Python3'
+
 import OJInterface as interface
 import json
 
@@ -6,8 +9,8 @@ ojs=interface.valid_ojs
 killed=False
 
 known_turns=[]
-current_length=-1
 known_bytes=[]
+dataver='log2'
 
 class OJWrapper:
     ojs=[]
@@ -26,7 +29,7 @@ class OJWrapper:
         self.ind=(self.ind+1)%self.len_ojs
         return self.ojs[self.ind].update(source)
 
-def init(oj_name,configs,log1=lambda a,b:print(a),log2=lambda a:print(a,end=''),stat_function=lambda *_:None):
+def init(oj_name,configs,log1=print,log2=lambda a:print(a,end=''),stat_function=lambda *_:None):
     global log
     global oj
     global stat
@@ -37,6 +40,11 @@ def init(oj_name,configs,log1=lambda a,b:print(a),log2=lambda a:print(a,end=''),
     if not isinstance(configs,(tuple,list)):
         configs=[configs]
     oj=OJWrapper(interface.valid_ojs[oj_name],configs,log2)
+    
+    if __name__=='__main__':
+        print('初始化完成')
+        print('输入 cli() 来开始')
+        print('输入 save() 来保存进度，输入 load(config) 来读取进度')
 
 base_code='''
 #include<cstdio>
@@ -85,8 +93,6 @@ def get_len():
     if i>=624:
         raise interface.Error('长度过长.')
     else:
-        global current_length
-        current_length=i
         global known_bytes
         known_bytes=[None for _ in range(i)]
         return i
@@ -115,8 +121,6 @@ def update_turn(data,output):
         global base_code
         base_code=whitelist(data,output)
         known_turns.append([data,output])
-        global current_length
-        current_length=-1
         global known_bytes
         known_bytes=[]
         stat('turn',None)
@@ -125,10 +129,10 @@ def update_turn(data,output):
         return False
 
 def get_turn():
-    if current_length==-1:
+    if known_bytes==[]:
         l=get_len()
     else:
-        l=current_length
+        l=len(known_bytes)
     log('长度是 %d'%l)
     stat('length',l)
     
@@ -145,17 +149,49 @@ def get_turn():
 def save():
     return json.dumps({
         'known_turns':known_turns,
-        'current_length':current_length,
+        'dataver':dataver,
         'known_bytes':known_bytes,
     })
 
 def load(config):
     data=json.loads(config)
-    global current_length
-    current_length=data['current_length']
+    if data['dataver']!=dataver:
+        log('存档版本无法识别')
+        return False
     global known_bytes
     known_bytes=data['known_bytes']
     for a in data['known_turns']:
         if not update_turn(*a):
             log('输出不正确: %s'%(a,))
+    return True
 
+if __name__=='__main__':
+    print('欢迎使用 ACFan (by @xmcp) 命令行')
+    print('可用OJ: '+', '.join(ojs.keys()))
+    print('在 Python Shell 中输入 init(oj_name,oj_config_or_list_of_configs) 来初始化')
+    def cli():
+        try:
+            while True:
+                #every turn
+                print('第 %d 组数据，正在获取长度 ...'%(len(known_turns)+1))
+                r=''.join(get_turn())
+                print('输入是\n%s'%r)
+                print('请填入正确的输出：')
+                while True:
+                    #every output
+                    try:
+                        d=eval(input('[REPR]: '))
+                    except Exception as e:
+                        print('解析失败: %s'%e)
+                    else:
+                        if not isinstance(d,(str,bytes)):
+                            print('请输入 REPR 格式的字符串')
+                        elif update_turn(r,d):
+                            print('输出正确')
+                            break
+                        else:
+                            print('输出错误，请重试')
+        except interface.Accepted:
+            print('Accepted!')
+        except interface.Error as e:
+            print('接口错误: %s'%e)

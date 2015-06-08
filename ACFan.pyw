@@ -1,4 +1,13 @@
 #coding=utf-8
+import sys
+if sys.version[0]=='2':
+    from Tkinter import Tk,mainloop,Label
+    tk=Tk()
+    tk.title('错误')
+    Label(tk,text='ACFan 需要使用 Python3.').pack(padx=20,pady=10)
+    mainloop()
+    sys.exit(-1)
+
 import ACFramework as framework
 from tkinter import *
 from tkinter.ttk import *
@@ -41,6 +50,7 @@ def worker():
         t1i(r,'blue')
         t1i('请填入正确的输出，然后按确定按钮','')
         status.waiting=r
+        statusvar.set('第 %d 组数据，输入已获取，等待填入输出 ...'%status.turns)
         tk.focus_force()
     except framework.interface.Accepted:
         t1i('','')
@@ -81,7 +91,7 @@ def load(*_):
     def async_load(data):
         try:
             framework.killed=False
-            framework.load(data)
+            assert framework.load(data), '进度读取失败'
         except Exception as e:
             t1i(e,'error')
             loadbtn['state']='normal'
@@ -133,11 +143,24 @@ def init(*_):
         t1i('ERROR: '+str(e),'error')
     else:
         t2.delete(1.0,END)
+        t2.unbind('<Return>')
         okbtn['command']=restart
         okbtn['text']='继续'
         loadbtn['state']='normal'
         t1i('填入存档字符串来并点击“读取”从存档开始，点击“继续”开始新的任务','')
-        
+    
+def enter_callback(*_):
+    if t2.index(INSERT).startswith('2.'):
+        ojname=t2.get('1.0','2.0').rstrip()
+        if ojname not in framework.ojs:
+            t1i('错误的OJ名称','error')
+        else:
+            t2.delete('3.0',END)
+            try:
+                t2.insert('3.0','\n'+framework.ojs[ojname].default_var)
+            except AttributeError:
+                t1i('无法获取 %s 的默认参数','error')
+    
 Label(tk,text='状态').grid(row=0,column=0,pady=5)
 Label(tk,textvariable=statusvar).grid(row=0,column=1,sticky='we')
 
@@ -154,7 +177,7 @@ t1.tag_config('green',foreground='black',background='#00FF00')
 t1.tag_config('debug',foreground='#777777',background=T1BG)
 t1.tag_config('error',foreground='white',background='#FF0000')
 
-t1.insert(END,'输入OJ名称和配置来启动ACFan.\n可用OJ:\n')
+t1.insert(END,'输入OJ名称和配置（以空行分隔）来启动ACFan.\n可用OJ列表:\n')
 t1.insert(END,', '.join(framework.ojs)+'\n','blue')
 
 t2=Text(tk,font='Consolas -13',height=10)
@@ -164,7 +187,7 @@ sbar2.grid(row=2,column=2,sticky='ns')
 t2['yscrollcommand']=sbar2.set
 tk.rowconfigure(2,weight=1)
 
-t2.insert(END,'(OJ名称)\n\n(配置JSON)')
+t2.bind('<Return>',enter_callback)
 
 okbtn=Button(tk,text='登录',command=init)
 okbtn.grid(row=3,column=0)
