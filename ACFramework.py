@@ -10,6 +10,7 @@ killed=False
 
 known_turns=[]
 known_bytes=[]
+current_mode=None
 dataver='log2'
 
 class OJWrapper:
@@ -49,19 +50,35 @@ def init(oj_name,configs,log1=print,log2=lambda a:print(a,end=''),stat_function=
 base_code='''
 #include<cstdio>
 #include<cstring>
-unsigned int p=0;
+#define _C if(unsigned(p)!=strlen(b))return false
+int p=0;
 void WA(){printf("this_is_absolutely_a_wrong_answer_2333");}
 void TLE(){while(1);}
 void MLE(){while(1)new long long;}
 void RE(){throw;}
 void OLE(){while(1)printf("i_am_a_junk_string_isnt_it");}
-bool OK(char *a,char *b){if(p!=strlen(b))return false;
-for(unsigned int x=0;x<strlen(b);x++)if(a[x]!=b[x])return false;
+bool OKfull(char *a,char *b){_C;
+for(int x=0;x<p;x++)if(a[x]!=b[x])return false;
+return true;}
+bool OKnorm(char *a,char *b){_C;
+for(int x=0;x<p;x++){if((a[x]>96&&a[x]<123?a[x]-32:a[x])!=b[x])return false;}
+return true;}
+bool OKlite(char *a,char *b){_C;
+for(int x=0;x<p;x++){if((a[x]=='\\n'?' ':a[x])!=b[x])return false;}
 return true;}
 int main(){
 char i[625];while(scanf("%c",i+p)!=EOF)p++;
-[BASE]
+//BASE
 return 0;}'''
+
+mode_code='''
+char norm[]="0123456789 \\nX+-*/=_ABCDEFabcdef",lite[]="0123456789 \\n";
+bool nf=1,lf=1;
+for(int x=0;x<p;x++){if(nf&&strchr(norm,i[x])==NULL)nf=0;if(lf&&strchr(lite,i[x])==NULL)lf=0;}
+if(!nf)WA();
+else if(!lf)TLE();
+else if(p<625)MLE();
+else OLE();'''
 
 len_code='''
 if(p<%d)WA();
@@ -71,7 +88,7 @@ else if(p<%d)RE();
 else OLE();
 '''
 
-bit_code='''
+bit_code_full='''
 if(i[[IND]]<%d)WA();
 else if(i[[IND]]<%d)TLE();
 else if(i[[IND]]<%d)MLE();
@@ -79,44 +96,98 @@ else if(i[[IND]]<%d)RE();
 else OLE();
 '''
 
+bit_code_norm='''
+char *u="0123456789 \\nX+-*/._ABCDEF",
+*r=strchr(u,(i[[IND]]>96&&i[[IND]]<123?i[[IND]]-32:i[[IND]]));
+if(r-u<%d)WA();
+else if(r-u<%d)TLE();
+else if(r-u<%d)MLE();
+else if(r-u<%d)RE();
+else OLE();
+'''
+
+bit_code_lite='''
+char *u="0123456789 ",
+*r1=strchr(u,(i[[IND]]=='\\n'?' ':i[[IND]])),
+*r2=([IND]==p?u+10:strchr(u,(i[[IND]+1]=='\\n'?' ':i[[IND]+1])));
+int r=(r1-u)*11+(r2-u);
+if(r<%d)WA();
+else if(r<%d)TLE();
+else if(r<%d)MLE();
+else if(r<%d)RE();
+else OLE();
+'''
+
 whitelist_code='''
 if(OK(i,(char*)"[DATA]")){printf("%s","[OUTPUT]");return 0;}
-[BASE]'''
+//BASE'''
+
+def get_mode():
+    log('选择最佳模式...')
+    r=oj.update(base_code.replace('//BASE',mode_code))
+    if r==interface.RE:
+        raise interface.Error('意外的运行时错误')
+    elif r==4:
+        raise interface.Error('数据量过大')
+    else:
+        global current_mode
+        current_mode={0:'full', 1:'norm', 2:'lite'}[r]
+        return current_mode
 
 def get_len():
     log('获取长度...')
     i,j=0,125
     while j>=1:      
-        r=oj.update(base_code.replace('[BASE]',\
+        r=oj.update(base_code.replace('//BASE',\
             len_code%(i+j,i+2*j,i+3*j,i+4*j)))
         i,j=i+r*j,j//5
-    if i>=624:
-        raise interface.Error('长度过长.')
-    else:
-        global known_bytes
-        known_bytes=[None for _ in range(i)]
-        return i
-    
-def get_bit(ind):    
-    log('获取第 %d 位...'%(ind+1))
-    i,j=0,25
-    while j>=1:      
-        r=oj.update(base_code.replace('[BASE]',\
-            (bit_code%(i+j,i+2*j,i+3*j,i+4*j)).replace('[IND]',str(ind))))
-        i,j=i+r*j,j//5
-
-    known_bytes[ind]=chr(i)
+    global known_bytes
+    known_bytes=[None for _ in range(i)]
     return i
+    
+def get_bit(ind,mode):    
+    log('获取第 %d 位...'%(ind+1))
+    if mode=='full':
+        i,j=5,25
+        while j>=1:
+            r=oj.update(base_code.replace('//BASE',\
+                (bit_code_full%(i+j,i+2*j,i+3*j,i+4*j)).replace('[IND]',str(ind))))
+            i,j=i+r*j,j//5
+        result=chr(i)
+        known_bytes[ind]=result
+    elif mode=='norm':
+        i,j=0,5
+        while j>=1:
+            r=oj.update(base_code.replace('//BASE',\
+                (bit_code_norm%(i+j,i+2*j,i+3*j,i+4*j)).replace('[IND]',str(ind))))
+            i,j=i+r*j,j//5
+        result='0123456789 \nX+-*/._ABCDEF'[i]
+        known_bytes[ind]=result
+    elif mode=='lite':
+        length=len(known_bytes)
+        i,j=0,25
+        di='0123456789 '
+        while j>=1:
+            r=oj.update(base_code.replace('//BASE',\
+                (bit_code_lite%(i+j,i+2*j,i+3*j,i+4*j)).replace('[IND]',str(ind))))
+            i,j=i+r*j,j//5
+        result=di[i//11]
+        known_bytes[ind]=result
+        if ind!=length:
+            known_bytes[ind+1]=di[i%11]
+    else:
+        raise interface.Error('错误的模式')
+    return result
 
 def update_turn(data,output):
     def whitelist(data,output):
         def trim(x):
             return x.replace('"',r'\"').replace('\t',r'\t').replace('\n',r'\n')
-        return base_code.replace('[BASE]',whitelist_code.\
+        return base_code.replace('//BASE',whitelist_code.\
             replace('[DATA]',trim(data)).replace('[OUTPUT]',trim(output)))
 
     log('正在检验输出...')
-    result=oj.update(whitelist(data,output).replace('[BASE]','TLE();'))
+    result=oj.update(whitelist(data,output).replace('//BASE','TLE();'))
     if result==1:
         global base_code
         base_code=whitelist(data,output)
@@ -129,6 +200,11 @@ def update_turn(data,output):
         return False
 
 def get_turn():
+    if current_mode:
+        m=current_mode
+    else:
+        m=get_mode()
+    log('使用 %s 模式'%m)
     if known_bytes==[]:
         l=get_len()
     else:
@@ -142,7 +218,7 @@ def get_turn():
         if known_bytes[now]:
             result[now]=known_bytes[now]
         else:
-            result[now]=chr(get_bit(now))
+            result[now]=get_bit(now,m)
         log('第 %d 位是 %s(%d)'%(now+1,repr(result[now]),ord(result[now])))
     return result
 
@@ -151,6 +227,7 @@ def save():
         'known_turns':known_turns,
         'dataver':dataver,
         'known_bytes':known_bytes,
+        'current_mode':current_mode,
     })
 
 def load(config):
@@ -159,7 +236,9 @@ def load(config):
         log('存档版本无法识别')
         return False
     global known_bytes
+    global current_mode
     known_bytes=data['known_bytes']
+    current_mode=data['current_mode']
     for a in data['known_turns']:
         if not update_turn(*a):
             log('输出不正确: %s'%(a,))
@@ -195,3 +274,4 @@ if __name__=='__main__':
             print('Accepted!')
         except interface.Error as e:
             print('接口错误: %s'%e)
+

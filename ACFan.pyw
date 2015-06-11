@@ -58,7 +58,7 @@ def worker():
         statusvar.set('已通过，共有 %d 组数据'%status.turns)
     except framework.interface.Error as e:
         t1i('','')
-        t1i('错误: '+str(e),'error')
+        t1i('错误: '+repr(e),'error')
 
 def restart():
     def worker_wrapper():
@@ -68,7 +68,7 @@ def restart():
             worker()
         except Exception as e:
             t1i('','')
-            t1i('未知错误: '+str(e),'error')
+            t1i('未知错误: '+repr(e),'error')
             raise
         finally:
             okbtn['command']=restart
@@ -140,7 +140,7 @@ def init(*_):
         t1i('正在初始化 %s...'%ojname,'')
         framework.init(ojname,json.loads(config),log1,log2,stat)
     except Exception as e:
-        t1i('ERROR: '+str(e),'error')
+        t1i('错误: '+repr(e),'error')
     else:
         t2.delete(1.0,END)
         t2.unbind('<Return>')
