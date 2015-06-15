@@ -26,6 +26,7 @@ class Status:
     length=0
     turns=1
     waiting=None
+    mode=None
 status=Status()
 
 def t1i(txt,mode,noreturn=False):
@@ -35,7 +36,7 @@ def t1i(txt,mode,noreturn=False):
 def worker():
     try:
         if status.waiting:
-            if not framework.update_turn(status.waiting,t2.get(1.0,END)[:-1]):
+            if not framework.update_turn(status.waiting,t2.get(1.0,END)[:-1],status.mode):
                 t1i('结果不正确，请重新输入','error')
                 return
             else:
@@ -44,8 +45,8 @@ def worker():
                 status.turns+=1
                 t1i('结果正确，正在继续运行','blue')
                 
-        statusvar.set('第 %d 组数据，正在获取长度 ...'%status.turns)
-        r=''.join(framework.get_turn())
+        statusvar.set('第 %d 组数据 ...'%status.turns)
+        r,_=framework.get_turn()
         t1i('第 %d 组数据是:'%status.turns,'green')
         t1i(r,'blue')
         t1i('请填入正确的输出，然后按确定按钮','')
@@ -93,7 +94,7 @@ def load(*_):
             framework.killed=False
             assert framework.load(data), '进度读取失败'
         except Exception as e:
-            t1i(e,'error')
+            t1i('错误: %s'%repr(e),'error')
             loadbtn['state']='normal'
         else:
             t1i('进度读取成功','green')
@@ -103,7 +104,8 @@ def load(*_):
             okbtn['state']='normal'
     
     okbtn['state']='disabled'
-    loadbtn['state']='disabled'    
+    loadbtn['state']='disabled'
+    statusvar.set('正在读取进度 ...')
     data=t2.get(1.0,END)[:-1]
     t=threading.Thread(target=async_load,args=(data,))
     t.setDaemon(True)
@@ -113,7 +115,7 @@ def save(*_):
     try:
         data=framework.save()
     except Exception as e:
-        t1i(e,'error')
+        t1i('错误: %s'%repr(e),'error')
     else:
         t2.delete(1.0,END)
         t2.insert(END,data)
@@ -127,10 +129,14 @@ def init(*_):
         if a=='length':
             status.length=b
         elif a=='bit':
-            statusvar.set('第 %d 组数据，正在获取第 %d / %d 位 ...'%\
-                (status.turns,b+1,status.length))
+            statusvar.set('第 %d 组数据，%s 字符集，正在获取第 %d / %d 位 ...'%\
+                (status.turns,status.mode,b+1,status.length))
         elif a=='turn':
             status.turns+=1
+        elif a=='mode':
+            status.mode=b
+            statusvar.set('第 %d 组数据，%s 字符集，正在获取长度 ...'%\
+                (status.turns,b))
         else:
             log('警告: stat收到了未知的回调参数 '+repr((a,b)),'error')
 

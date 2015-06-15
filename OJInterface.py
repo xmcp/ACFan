@@ -17,6 +17,8 @@ class Error(Exception):
         self.s=s
     def __str__(self):
         return self.s
+    def __repr__(self):
+        return self.s
 
 WA,TLE,MLE,RE,OLE=0,1,2,3,4
 

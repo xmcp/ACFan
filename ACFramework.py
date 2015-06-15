@@ -11,7 +11,7 @@ killed=False
 known_turns=[]
 known_bytes=[]
 current_mode=None
-dataver='log2'
+dataver='log3'
 
 class OJWrapper:
     ojs=[]
@@ -72,7 +72,7 @@ char i[625];while(scanf("%c",i+p)!=EOF)p++;
 return 0;}'''
 
 mode_code='''
-char norm[]="0123456789 \\nX+-*/=_ABCDEFabcdef",lite[]="0123456789 \\n";
+char norm[]="0123456789 \\nX+-*/=.ABCDEFabcdef",lite[]="0123456789 \\n";
 bool nf=1,lf=1;
 for(int x=0;x<p;x++){if(nf&&strchr(norm,i[x])==NULL)nf=0;if(lf&&strchr(lite,i[x])==NULL)lf=0;}
 if(!nf)WA();
@@ -97,7 +97,7 @@ else OLE();
 '''
 
 bit_code_norm='''
-char *u="0123456789 \\nX+-*/._ABCDEF",
+char *u="0123456789 \\nX+-*/=.ABCDEF",
 *r=strchr(u,(i[[IND]]>96&&i[[IND]]<123?i[[IND]]-32:i[[IND]]));
 if(r-u<%d)WA();
 else if(r-u<%d)TLE();
@@ -109,7 +109,7 @@ else OLE();
 bit_code_lite='''
 char *u="0123456789 ",
 *r1=strchr(u,(i[[IND]]=='\\n'?' ':i[[IND]])),
-*r2=([IND]==p?u+10:strchr(u,(i[[IND]+1]=='\\n'?' ':i[[IND]+1])));
+*r2=([IND]+1==p?u+10:strchr(u,(i[[IND]+1]=='\\n'?' ':i[[IND]+1])));
 int r=(r1-u)*11+(r2-u);
 if(r<%d)WA();
 else if(r<%d)TLE();
@@ -119,7 +119,7 @@ else OLE();
 '''
 
 whitelist_code='''
-if(OK(i,(char*)"[DATA]")){printf("%s","[OUTPUT]");return 0;}
+if(OK[MODE](i,(char*)"[DATA]")){printf("%s","[OUTPUT]");return 0;}
 //BASE'''
 
 def get_mode():
@@ -161,7 +161,7 @@ def get_bit(ind,mode):
             r=oj.update(base_code.replace('//BASE',\
                 (bit_code_norm%(i+j,i+2*j,i+3*j,i+4*j)).replace('[IND]',str(ind))))
             i,j=i+r*j,j//5
-        result='0123456789 \nX+-*/._ABCDEF'[i]
+        result='0123456789 \nX+-*/=.ABCDEF'[i]
         known_bytes[ind]=result
     elif mode=='lite':
         length=len(known_bytes)
@@ -173,27 +173,30 @@ def get_bit(ind,mode):
             i,j=i+r*j,j//5
         result=di[i//11]
         known_bytes[ind]=result
-        if ind!=length:
+        if ind+1!=length:
             known_bytes[ind+1]=di[i%11]
     else:
         raise interface.Error('错误的模式')
     return result
 
-def update_turn(data,output):
-    def whitelist(data,output):
+def update_turn(data,output,mode):
+    def whitelist(data,output,mode):
         def trim(x):
             return x.replace('"',r'\"').replace('\t',r'\t').replace('\n',r'\n')
         return base_code.replace('//BASE',whitelist_code.\
-            replace('[DATA]',trim(data)).replace('[OUTPUT]',trim(output)))
+            replace('[DATA]',trim(data)).replace('[OUTPUT]',trim(output))\
+                .replace('[MODE]',mode))
 
     log('正在检验输出...')
-    result=oj.update(whitelist(data,output).replace('//BASE','TLE();'))
+    result=oj.update(whitelist(data,output,mode).replace('//BASE','TLE();'))
     if result==1:
         global base_code
-        base_code=whitelist(data,output)
-        known_turns.append([data,output])
+        base_code=whitelist(data,output,mode)
+        known_turns.append([data,output,mode])
         global known_bytes
         known_bytes=[]
+        global current_mode
+        current_mode=None
         stat('turn',None)
         return True
     else:
@@ -204,7 +207,14 @@ def get_turn():
         m=current_mode
     else:
         m=get_mode()
-    log('使用 %s 模式'%m)
+    log('使用 %s 字符集'%m)
+    stat('mode',m)
+    
+    if m=='lite':
+        log('注意: 在此字符集中，换行符会被视为空格')
+    elif m=='norm':
+        log('注意：在此字符集中，小写字母会被视为大写字母')
+    
     if known_bytes==[]:
         l=get_len()
     else:
@@ -220,7 +230,7 @@ def get_turn():
         else:
             result[now]=get_bit(now,m)
         log('第 %d 位是 %s(%d)'%(now+1,repr(result[now]),ord(result[now])))
-    return result
+    return (''.join(result),m)
 
 def save():
     return json.dumps({
@@ -252,8 +262,8 @@ if __name__=='__main__':
         try:
             while True:
                 #every turn
-                print('第 %d 组数据，正在获取长度 ...'%(len(known_turns)+1))
-                r=''.join(get_turn())
+                print('第 %d 组数据，正在选取最佳模式 ...'%(len(known_turns)+1))
+                r,mode=get_turn()
                 print('输入是\n%s'%r)
                 print('请填入正确的输出：')
                 while True:
@@ -261,11 +271,11 @@ if __name__=='__main__':
                     try:
                         d=eval(input('[REPR]: '))
                     except Exception as e:
-                        print('解析失败: %s'%e)
+                        print('解析失败: %s'%repr(e))
                     else:
                         if not isinstance(d,(str,bytes)):
                             print('请输入 REPR 格式的字符串')
-                        elif update_turn(r,d):
+                        elif update_turn(r,d,mode):
                             print('输出正确')
                             break
                         else:
@@ -273,5 +283,5 @@ if __name__=='__main__':
         except interface.Accepted:
             print('Accepted!')
         except interface.Error as e:
-            print('接口错误: %s'%e)
+            print('接口错误: %s'%repr(e))
 
