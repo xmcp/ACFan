@@ -186,6 +186,10 @@ class Hust:
             log(result)
             raise Error('登录失败.')
         else:
+            #set language
+            self.opener.open(urllib.request.Request(
+                url='%s/setlang.php?lang=cn'%self.url,
+            ))
             log('登录成功.\n')
 
     def _submit(self,source):
@@ -241,8 +245,9 @@ class Hust:
                 .format(url=self.url,p=self.problem,u=self.username),
             )).read(),'html5lib')
         try:
-            return _proc(response.findAll('tbody')[-1].find('tr').findAll('td')\
-                [3].text)
+            return _proc(response.findAll('tbody')[-1].\
+                find(lambda x:x.name=='tr' and ((not x.has_attr('class')) or x['class']!=['toprow']))\
+                .findAll('td')[3].text)
         except Exception as e:
             if isinstance(e,(Error,Accepted)):
                 raise

@@ -197,7 +197,7 @@ def update_turn(data,output,mode):
         known_bytes=[]
         global current_mode
         current_mode=None
-        stat('turn',None)
+        stat('turn',len(known_turns))
         return True
     else:
         return False

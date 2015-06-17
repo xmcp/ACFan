@@ -132,7 +132,7 @@ def init(*_):
             statusvar.set('第 %d 组数据，%s 字符集，正在获取第 %d / %d 位 ...'%\
                 (status.turns,status.mode,b+1,status.length))
         elif a=='turn':
-            status.turns+=1
+            status.turns=b
         elif a=='mode':
             status.mode=b
             statusvar.set('第 %d 组数据，%s 字符集，正在获取长度 ...'%\
