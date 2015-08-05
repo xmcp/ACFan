@@ -17,9 +17,10 @@ class OJWrapper:
     ojs=[]
     ind=0
     
-    def __init__(self,OJClass,configs,log2):
+    def __init__(self,OJClass,configs,log2,_refresh):
         for config in configs:
             self.ojs.append(OJClass(log2,config))
+            _refresh()
         self.len_ojs=len(self.ojs)
         log('用户池中有 %d 个登录凭据'%self.len_ojs)
     
@@ -27,10 +28,13 @@ class OJWrapper:
         if killed:
             raise interface.Error('任务中断')
         
-        self.ind=(self.ind+1)%self.len_ojs
-        return self.ojs[self.ind].update(source)
+        try:
+            return self.ojs[self.ind].update(source)
+        finally:
+            self.ind=(self.ind+1)%self.len_ojs
 
-def init(oj_name,configs,log1=print,log2=lambda a:print(a,end=''),stat_function=lambda *_:None):
+def init(oj_name,configs,log1=print,log2=lambda a:print(a,end=''),
+        stat_function=(lambda *_:None),refresh_function=(lambda *_:None)):
     global log
     global oj
     global stat
@@ -40,7 +44,7 @@ def init(oj_name,configs,log1=print,log2=lambda a:print(a,end=''),stat_function=
 
     if not isinstance(configs,(tuple,list)):
         configs=[configs]
-    oj=OJWrapper(interface.valid_ojs[oj_name],configs,log2)
+    oj=OJWrapper(interface.valid_ojs[oj_name],configs,log2,refresh_function)
     
     if __name__=='__main__':
         print('初始化完成')

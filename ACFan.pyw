@@ -144,7 +144,8 @@ def init(*_):
 
     try:
         t1i('正在初始化 %s...'%ojname,'')
-        framework.init(ojname,json.loads(config),log1,log2,stat)
+        tk.update()
+        framework.init(ojname,json.loads(config),log1,log2,stat,tk.update)
     except Exception as e:
         t1i('错误: '+repr(e),'error')
     else:

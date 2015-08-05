@@ -7,6 +7,7 @@ import urllib.parse
 import bs4
 import time
 import socket
+import base64
 
 
 class Accepted(Exception):
@@ -89,8 +90,9 @@ class POJ:
             data=urllib.parse.urlencode({
                 'problem_id':self.problem,
                 'language':'4',
-                'source':source,
-                'submit':'Submit'
+                'source':base64.b64encode(source.encode()),
+                'submit':'Submit',
+                'encoded':'1',
             }).encode(),
             headers=self._FUCK_POJ
         )).read()
