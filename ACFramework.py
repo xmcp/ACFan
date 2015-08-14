@@ -71,7 +71,7 @@ bool OKlite(char *a,char *b){_C;
 for(int x=0;x<p;x++){if((a[x]=='\\n'?' ':a[x])!=b[x])return false;}
 return true;}
 int main(){
-char i[625];while(scanf("%c",i+p)!=EOF)p++;
+char i[625];while(scanf("%c",i+p)!=EOF)if(i[p]!='\\r')p++;i[p]='\\0';
 //BASE
 return 0;}'''
 

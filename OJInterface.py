@@ -107,7 +107,6 @@ class POJ:
                 raise Error('提交失败')
         else:
             self._last_submit=time.time()
-            self.log('提交成功\n')
 
     def _query(self):
         self.log('查询中... ')
@@ -143,7 +142,6 @@ class POJ:
                     self.log('格式错误,视为结果错误. ')
                     return self._standard[self._status['Wrong Answer']]
                 elif result>0:
-                    self.log(self._standard[result])
                     return self._standard[result]
             raise Error('超时')
         finally:
