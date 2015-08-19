@@ -156,7 +156,7 @@ class Hust:
 "username":"",
 "password":"",
 "problem":1000,
-"url":"http://hustoj.sinaapp.com"
+"url":"http://www.lydsy.com/JudgeOnline/"
 }'''
     
     _last_submit=0
