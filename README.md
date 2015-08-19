@@ -3,7 +3,7 @@
 
 兼容POJ和HustOJ。
 
-**ACFan的原理解析和适用范围详见[这篇wiki文章](/xmcp/ACFan/wiki/ACFan-%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90)**
+**ACFan的原理解析和适用范围详见[这篇wiki文章](https://github.com/xmcp/ACFan/wiki/ACFan-%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90)**
 
 #Runtime
 Python **3.x**
