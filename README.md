@@ -17,9 +17,9 @@ Python **3.x**
 可以用`pip install`安装
 
 #用法
-GUI版本: 运行`ACFan.pyw`
+GUI版本：运行`ACFan.pyw`
 
-命令行版本: 运行`ACFramework.py` ***(注意：在交互shell，比如IDLE中运行，不要双击或在cmd中运行)***
+命令行版本：运行`ACFramework.py` ***(注意：请在交互shell，比如IDLE中运行，不要双击或在cmd中直接运行)***
 
 # 自定义
 目前ACFan仅兼容POJ和HustOJ（大视野测评使用的就是HustOJ）。如果你想让ACFan兼容其它OJ，你可以自己动手写一个接口。
