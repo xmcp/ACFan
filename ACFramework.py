@@ -58,7 +58,7 @@ base_code='''
 int p=0;
 void WA(){printf("this_is_absolutely_a_wrong_answer_2333");}
 void TLE(){while(1);}
-void MLE(){while(1)new long long[233333];}
+void MLE(){while(1)new long long[2333];}
 void RE(){throw;}
 void OLE(){while(1)printf("i_am_a_junk_string_isnt_it");}
 bool OKfull(char *a,char *b){_C;
