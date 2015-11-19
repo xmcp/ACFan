@@ -1,7 +1,7 @@
 # ACFan
 自动AC机，刷OJ必备~
 
-兼容POJ和HustOJ。
+目前官方兼容POJ和HustOJ。
 
 **ACFan的原理解析和适用范围详见[这篇wiki文章](https://github.com/xmcp/ACFan/wiki/ACFan-%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90)**
 
@@ -30,7 +30,7 @@ ACFan有两个版本：GUI版和命令行版。如果条件允许，**请首先�
 
 在输入框中输入OJ名称（区分大小写）然后按**两次**回车，接着按照提示输入OJ的配置信息（例如用户名、密码和题号）并按“登录”按钮来完成初始化。
 
-有的OJ对同一账号提交代码的间隔有限制（比如HustOJ的限制是10秒一次），此时你可以用方括号将多组配置信息括起来，ACFan将依次用这些账号提交代码。例如：
+有的OJ对同一账号提交代码的间隔有限制（比如HustOJ的限制是10秒一次），此时你可以把多组配置信息放在一个`JSON Array`里，ACFan将依次用这些账号提交代码,以绕过时间间隔限制。例如：
 
     [
         {"username":"测试1","password":"测试1","problem":1000},
@@ -40,9 +40,9 @@ ACFan有两个版本：GUI版和命令行版。如果条件允许，**请首先�
 
 初始化完毕后，点击“继续”按钮开始自动化dump。
 
-对于数据量较大的题目，dump可能会花一段时间，你随时可以在暂停后按“保存”按钮保存当前进度。点击“保存”按钮后，存档字符串会出现在输入框中，**把它复制到别的地方并妥善保存**。当你想读取存档时，将存档字符串粘贴到输入框中，然后按“读取”。
+对于数据量较大的题目，dump可能会花一段时间，你随时可以在暂停后按“保存”按钮保存当前进度。点击“保存”按钮后，“存档字符串”会出现在输入框中，**把它复制到别的地方并妥善保存**。当你想读取存档时，将存档字符串粘贴到输入框中，然后按“读取”。
 
-在自动化dump过程中，你需要按照屏幕上的提示，手算出每一组输入数据的正确输出。不用担心，ACFan会检验您的答案是否正确。
+在自动化dump过程中，你需要按照屏幕上的提示，手算出每一组输入数据的正确输出。ACFan会检验您的答案是否正确。
 
 ##命令行版本
 
@@ -50,10 +50,10 @@ ACFan有两个版本：GUI版和命令行版。如果条件允许，**请首先�
 
 ***注意：请在交互shell（使用`-i`命令行参数），或在IDLE中运行，不要双击或在cmd中直接运行。***
 
-***注意：在交互shell中默认有输出缓存，所以log可能在不换行时不更新。如果你搞不定输出缓存的事，建议你在IDLE中打开`ACFramework`并运行。***
+***注意：在交互shell中默认有输出缓存，所以log可能在不换行时不更新，添加 `-u` 命令行参数来禁用输出缓存。如果你搞不定输出缓存的事，建议你在IDLE中打开`ACFramework`并运行。***
 
 #扩展OJ接口
-目前ACFan仅兼容POJ和HustOJ（大视野测评使用的就是HustOJ）。如果你想让ACFan兼容其它OJ，你可以自己动手写一个接口。
+目前ACFan仅兼容POJ和HustOJ（大视野测评使用的是HustOJ）。如果你想让ACFan兼容其它OJ，你可以自己动手写一个接口。
 
 方法如下：
 
@@ -97,3 +97,24 @@ ACFan有两个版本：GUI版和命令行版。如果条件允许，**请首先�
 
 ### 最后，翻到文件底部，在`valid_ojs`字典里加上你的OJ接口。
 格式是：`{'你的OJ名称': Your_OJ_Class}`
+
+### 贯彻开源精神
+欢迎以 pull request 的方式为 ACFan 贡献你的接口。
+
+# License
+
+*This program is free software. It comes without any warranty, to the extent permitted by applicable law. You can redistribute it and/or modify it under the terms of the Do What The Fuck You Want To Public License, Version 2, as published by Sam Hocevar. See below for more details.*
+
+                DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+                        Version 2, December 2004
+    
+     Copyright (C) 2004 Sam Hocevar <sam@hocevar.net>
+    
+     Everyone is permitted to copy and distribute verbatim or modified
+     copies of this license document, and changing it is allowed as long
+     as the name is changed.
+    
+                DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+       TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+    
+      0. You just DO WHAT THE FUCK YOU WANT TO.
