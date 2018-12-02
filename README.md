@@ -1,29 +1,24 @@
 # ACFan
 自动AC机，刷OJ必备~
 
-目前官方兼容POJ和HustOJ。
+目前原生兼容POJ和HustOJ，支持开发其他OJ的扩展接口。
 
 **ACFan的原理解析和适用范围详见[这篇wiki文章](https://github.com/xmcp/ACFan/wiki/ACFan-%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90)**
 
-#Runtime
+# Runtime
 Python **3.x**
 
 (在 Python 3.4.0 上开发并测试)
 
-#依赖包
+# 依赖
 - `beautifulsoup4`
 - `html5lib`
-
-可以用`pip install`安装
-
 - `tkinter`
 
-Python （通常）内置
-
-#用法
+# 用法
 ACFan有两个版本：GUI版和命令行版。如果条件允许，**请首先使用GUI版**。
 
-##GUI版本
+## GUI版本
 运行`ACFan.pyw`
 
 出现的窗口中包括两个文本框。上面的浅灰色文本框将输出log信息，虽然你可以在上面输入文字但这并没有什么卵用。**下面的白色文本框才是给你输入信息用的。**
@@ -44,7 +39,7 @@ ACFan有两个版本：GUI版和命令行版。如果条件允许，**请首先�
 
 在自动化dump过程中，你需要按照屏幕上的提示，手算出每一组输入数据的正确输出。ACFan会检验您的答案是否正确。
 
-##命令行版本
+## 命令行版本
 
 运行`ACFramework.py`，然后按照屏幕提示进行操作。
 
@@ -52,7 +47,7 @@ ACFan有两个版本：GUI版和命令行版。如果条件允许，**请首先�
 
 ***注意：在交互shell中默认有输出缓存，所以log可能在不换行时不更新，添加 `-u` 命令行参数来禁用输出缓存。如果你搞不定输出缓存的事，建议你在IDLE中打开`ACFramework`并运行。***
 
-#扩展OJ接口
+# 扩展OJ接口
 目前ACFan仅兼容POJ和HustOJ（大视野测评使用的是HustOJ）。如果你想让ACFan兼容其它OJ，你可以自己动手写一个接口。
 
 方法如下：
