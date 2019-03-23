@@ -11,7 +11,12 @@ killed=False
 known_turns=[]
 known_bytes=[]
 current_mode=None
-dataver='log3'
+dataver='log4'
+
+NORM='0123456789 \nX+-*/=.ABCDEF'
+
+def cpp_encode(s):
+    return json.dumps(s)
 
 class OJWrapper:
     ojs=[]
@@ -50,6 +55,7 @@ def init(oj_name,configs,log1=print,log2=lambda a:print(a,end=''),
         print('初始化完成')
         print('输入 cli() 来开始')
         print('输入 save() 来保存进度，输入 load(config) 来读取进度')
+        print('修改 NORM 变量来调整 norm 字符集的内容（可容纳25种字符）')
 
 base_code='''
 #include<cstdio>
@@ -58,31 +64,33 @@ base_code='''
 int p=0;
 void WA(){printf("this_is_absolutely_a_wrong_answer_2333");}
 void TLE(){while(1);}
-void MLE(){while(1)new long long[2333];}
+void MLE(){while(1)new long long[99999];}
 void RE(){throw;}
 void OLE(){while(1)printf("i_am_a_junk_string_isnt_it");}
 bool OKfull(char *a,char *b){_C;
 for(int x=0;x<p;x++)if(a[x]!=b[x])return false;
 return true;}
 bool OKnorm(char *a,char *b){_C;
-for(int x=0;x<p;x++){if((a[x]>96&&a[x]<123?a[x]-32:a[x])!=b[x])return false;}
+for(int x=0;x<p;x++){if(a[x]!=b[x])return false;}
 return true;}
 bool OKlite(char *a,char *b){_C;
 for(int x=0;x<p;x++){if((a[x]=='\\n'?' ':a[x])!=b[x])return false;}
 return true;}
 int main(){
-char i[625];while(scanf("%c",i+p)!=EOF)if(i[p]!='\\r')p++;i[p]='\\0';
+char i[635];while(scanf("%c",i+p)!=EOF && p<630)if(i[p]!='\\r')p++;i[p]='\\0';
 //BASE
-return 0;}'''
+return 0;}
+'''
 
 mode_code='''
-char norm[]="0123456789 \\nX+-*/=.ABCDEFabcdef",lite[]="0123456789 \\n";
+char norm[]=__NORM__,lite[]="0123456789 \\n";
 bool nf=1,lf=1;
 for(int x=0;x<p;x++){if(nf&&strchr(norm,i[x])==NULL)nf=0;if(lf&&strchr(lite,i[x])==NULL)lf=0;}
-if(!nf)WA();
-else if(!lf)TLE();
-else if(p<625)MLE();
-else OLE();'''
+if(p>=625)TLE();
+else if(lf)OLE();
+else if(nf)WA();
+else MLE();
+'''
 
 len_code='''
 if(p<%d)WA();
@@ -101,8 +109,8 @@ else OLE();
 '''
 
 bit_code_norm='''
-char *u="0123456789 \\nX+-*/=.ABCDEF",
-*r=strchr(u,(i[[IND]]>96&&i[[IND]]<123?i[[IND]]-32:i[[IND]]));
+char u[]=__NORM__,
+*r=strchr(u,(i[[IND]]));
 if(r-u<%d)WA();
 else if(r-u<%d)TLE();
 else if(r-u<%d)MLE();
@@ -111,7 +119,7 @@ else OLE();
 '''
 
 bit_code_lite='''
-char *u="0123456789 ",
+char u[]="0123456789 ",
 *r1=strchr(u,(i[[IND]]=='\\n'?' ':i[[IND]])),
 *r2=([IND]+1==p?u+10:strchr(u,(i[[IND]+1]=='\\n'?' ':i[[IND]+1])));
 int r=(r1-u)*11+(r2-u);
@@ -124,18 +132,19 @@ else OLE();
 
 whitelist_code='''
 if(OK[MODE](i,(char*)"[DATA]")){printf("%s","[OUTPUT]");return 0;}
-//BASE'''
+//BASE
+'''
 
 def get_mode():
     log('选择最佳模式...')
-    r=oj.update(base_code.replace('//BASE',mode_code))
+    r=oj.update(base_code.replace('//BASE',mode_code.replace('__NORM__',cpp_encode(NORM))))
     if r==interface.RE:
         raise interface.Error('意外的运行时错误')
-    elif r==4:
+    elif r==interface.TLE:
         raise interface.Error('数据量过大')
     else:
         global current_mode
-        current_mode={0:'full', 1:'norm', 2:'lite'}[r]
+        current_mode={interface.MLE:'full', interface.WA:'norm', interface.OLE:'lite'}[r]
         return current_mode
 
 def get_len():
@@ -163,9 +172,9 @@ def get_bit(ind,mode):
         i,j=0,5
         while j>=1:
             r=oj.update(base_code.replace('//BASE',\
-                (bit_code_norm%(i+j,i+2*j,i+3*j,i+4*j)).replace('[IND]',str(ind))))
+                (bit_code_norm%(i+j,i+2*j,i+3*j,i+4*j)).replace('[IND]',str(ind)).replace('__NORM__',cpp_encode(NORM))))
             i,j=i+r*j,j//5
-        result='0123456789 \nX+-*/=.ABCDEF'[i]
+        result=NORM[i]
         known_bytes[ind]=result
     elif mode=='lite':
         length=len(known_bytes)
@@ -216,8 +225,6 @@ def get_turn():
     
     if m=='lite':
         log('注意: 在此字符集中，换行符会被视为空格')
-    elif m=='norm':
-        log('注意：在此字符集中，小写字母会被视为大写字母')
     
     if known_bytes==[]:
         l=get_len()
@@ -242,6 +249,7 @@ def save():
         'dataver':dataver,
         'known_bytes':known_bytes,
         'current_mode':current_mode,
+        'norm_charset':NORM,
     })
 
 def load(config):
@@ -251,8 +259,10 @@ def load(config):
         return False
     global known_bytes
     global current_mode
+    global NORM
     known_bytes=data['known_bytes']
     current_mode=data['current_mode']
+    NORM=data['norm_charset']
     for a in data['known_turns']:
         if not update_turn(*a):
             log('输出不正确: %s'%(a,))

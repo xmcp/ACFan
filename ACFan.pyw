@@ -32,6 +32,7 @@ status=Status()
 def t1i(txt,mode,noreturn=False):
     t1.insert(END,str(txt) if noreturn else str(txt)+'\n',mode)
     t1.see(END)
+    tk.update_idletasks()
 
 def worker():
     try:
@@ -179,9 +180,9 @@ sbar1.grid(row=1,column=2,sticky='ns')
 t1['yscrollcommand']=sbar1.set
 tk.rowconfigure(1,weight=3)
 
-t1.tag_config('blue',foreground='blue',background=T1BG)
+t1.tag_config('blue',foreground='blue')
 t1.tag_config('green',foreground='black',background='#00FF00')
-t1.tag_config('debug',foreground='#777777',background=T1BG)
+t1.tag_config('debug',foreground='#777777')
 t1.tag_config('error',foreground='white',background='#FF0000')
 
 t1.insert(END,'输入OJ名称和配置（以空行分隔）来启动ACFan.\n可用OJ列表:\n')

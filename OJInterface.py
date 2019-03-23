@@ -8,6 +8,8 @@ import bs4
 import time
 import socket
 import base64
+import json
+from http.cookiejar import Cookie
 
 
 class Accepted(Exception):
@@ -26,9 +28,9 @@ WA,TLE,MLE,RE,OLE=0,1,2,3,4
 
 class POJ:
     default_var='''{
-    "username":"",
-    "password":"",
-    "problem":1000
+    "username": "",
+    "password": "",
+    "problem": 1000
 }'''
     
     _status={
@@ -153,44 +155,52 @@ class POJ:
 
 class Hust:
     default_var='''{
-"username":"",
-"password":"",
-"problem":1000,
-"url":"http://www.lydsy.com/JudgeOnline/"
+"username": "",
+"password": "",
+"problem": 1000,
+"url": "http://www.lydsy.com/JudgeOnline/"
 }'''
     
     _last_submit=0
+    _global_headers={
+        'User-Agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2414.0 Safari/537.36',
+        'Accept-Language':'zh-CN,zh;q=0.8,en;q=0.6',
+    }
     
     def __init__(self,log,config):
-        self.username,self.password,self.problem,self.url=\
-            config['username'],config['password'],config['problem'],config['url']
+        self.username,self.problem,self.url=\
+            config['username'],config['problem'],config['url']
         self.log=log
         if self.url.endswith('/'):
             self.url=self.url[:-1]
         if '://' not in self.url:
             self.url='http://'+self.url
-        log('正在以 %s 登录... '%self.username)
-        
+
         cookie=urllib.request.HTTPCookieProcessor()
-        self.opener=urllib.request.build_opener(cookie)
-        
-        result=self.opener.open(urllib.request.Request(
-            url='%s/login.php'%self.url,
-            data=urllib.parse.urlencode({
-                'user_id':self.username,
-                'password':self.password,
-                'submit':'Submit',
-            }).encode(),
-        )).read()
-        if b'history.go(-2);' not in result:
-            log(result)
-            raise Error('登录失败.')
+        if 'cookies' not in config:   
+            log('正在以 %s 登录... '%self.username)
+            self.opener=urllib.request.build_opener(cookie)
+            
+            result=self.opener.open(urllib.request.Request(
+                url='%s/login.php'%self.url,
+                data=urllib.parse.urlencode({
+                    'user_id':self.username,
+                    'password':config['password'],
+                    'submit':'Submit',
+                }).encode(),
+            )).read()
+            if b'history.go(-2);' not in result:
+                log(result)
+                raise Error('登录失败.')
         else:
-            #set language
-            self.opener.open(urllib.request.Request(
-                url='%s/setlang.php?lang=cn'%self.url,
-            ))
-            log('登录成功.\n')
+            self._global_headers['Cookie']=config['cookie']
+            self.opener=urllib.request.build_opener(cookie)
+        #set language
+        self.opener.open(urllib.request.Request(
+            url='%s/setlang.php?lang=cn'%self.url,
+            headers=self._global_headers,
+        ))
+        log('登录成功.\n')
 
     def _submit(self,source):
         delta=self._last_submit+10-time.time()+.05
@@ -206,6 +216,7 @@ class Hust:
                 'language':'1',
                 'source':source,
             }).encode(),
+            headers=self._global_headers,
         )).read()
         if b'<form id=simform action="status.php" method="get">' not in result:
             self.log(result)
@@ -243,7 +254,8 @@ class Hust:
         response=bs4.BeautifulSoup(self.opener.open(urllib.request.Request(
             url='{url}/status.php?problem_id={p}&user_id={u}&language=1&jresult=-1'\
                 .format(url=self.url,p=self.problem,u=self.username),
-            )).read(),'html5lib')
+            headers=self._global_headers,
+        )).read(),'html5lib')
         try:
             return _proc(response.findAll('tbody')[-1].\
                 find(lambda x:x.name=='tr' and ((not x.has_attr('class')) or x['class']!=['toprow']))\
@@ -317,9 +329,125 @@ class Sock:
                 raise
 
 
+class OpenJudge:
+    default_var='''{
+    "username": "",
+    "password": "",
+    "submit_url": "http://bailian.openjudge.cn/practice/1000/submit/"
+}'''
+    
+    def __init__(self,log,config):
+        username,password,submit_url=\
+            config['username'],config['password'],config['submit_url']
+        self.log=log
+        log('正在以 %s 登录... '%username)
+        
+        cookie=urllib.request.HTTPCookieProcessor()
+        self.opener=urllib.request.build_opener(cookie)
+        
+        result=self.opener.open(urllib.request.Request(
+            url='http://openjudge.cn/api/auth/login/',
+            data=urllib.parse.urlencode({
+                'redirectUrl': 'http://openjudge.cn/',
+                'email': username,
+                'password': password,
+            }).encode()
+        )).read()
+        if b'"result":"SUCCESS"' not in result:
+            log(result)
+            raise Error('登录失败.')
+        else:
+            log('登录成功.\n')
+            
+        log('正在查询题目编号... ')
+        splited=urllib.parse.urlparse(submit_url)
+        self.domain='%s://%s'%(splited.scheme,splited.netloc)
+        result=bs4.BeautifulSoup(self.opener.open(urllib.request.Request(
+            url=submit_url,
+        )).read(),'html5lib')
+        self.contest_id=result.find('input',attrs={'name':'contestId'})['value']
+        self.problem_id=result.find('input',attrs={'name':'problemNumber'})['value']
+        log('域名 %s 比赛 %s 题目 %s\n'%(self.domain,self.contest_id,self.problem_id))
+
+    def _submit(self,source):
+        self.log('正在提交... ')
+        result=json.loads(self.opener.open(urllib.request.Request(
+            url=self.domain+'/api/solution/submit/',
+            data=urllib.parse.urlencode({
+                'contestId': self.contest_id,
+                'problemNumber': self.problem_id,
+                'sourceEncode': 'base64',
+                'language': 'G++',
+                'source': base64.b64encode(source.encode()).decode()
+            }).encode(),
+        )).read())
+        if result['result']!='SUCCESS':
+            self.log(str(result))
+            raise Error('提交失败.')
+        else:
+            self.log('提交成功.\n')
+            return result['redirect']
+
+    def _query(self,url):
+        def _proc(soup):
+            s=response.find(class_='compile-status').find('a').get_text()
+            if s=='Accepted':
+                raise Accepted()
+            elif s=='Wrong Answer':
+                return WA
+            elif s=='Presentation Error':
+                self.log('Presentation Error')
+                return WA
+            elif s=='Time Limit Exceeded':
+                memory=response.find(class_='compile-info').find('dt',text='内存:').next_sibling.next_sibling.get_text()
+                if not memory.endswith('kB'):
+                    raise Error('内存格式无效: %s'%memory)
+                if int(memory[:-2])>10000: # openjudge is sb
+                    return MLE
+                else:
+                    return TLE
+            elif s=='Memory Limit Exceeded':
+                return MLE
+            elif s=='Runtime Error':
+                return RE
+            elif s=='Output Limit Exceeded':
+                return OLE
+            elif s=='Compile Error':
+                raise Error('Compile Error')
+            elif s=='Waiting':
+                return -1
+            else:
+                self.log(s)
+                raise Error('不被识别的状态')
+        
+        self.log('查询中... ')
+        response=bs4.BeautifulSoup(self.opener.open(urllib.request.Request(
+            url=url,
+        )).read(),'html5lib')
+        try:
+            return _proc(response)
+        except Exception as e:
+            if isinstance(e,(Error,Accepted)):
+                raise
+            else:
+                self.log('HTML是:')
+                self.log(str(response))
+                raise Error('查询失败: %s %s'%(type(e),str(e)))
+
+    def update(self,source):
+        url=self._submit(source)
+        for _ in range(40):
+            time.sleep(1)
+            result=self._query(url)
+            if result>=0:
+                self.log('结果是 %s\n'%result)
+                return result
+        raise Error('超时')
+
 valid_ojs={
-    'POJ':POJ,
-    'HustOJ':Hust,
-    'SocketOJ':Sock,
+    'POJ': POJ,
+    'HustOJ': Hust,
+    'SocketOJ': Sock,
+    #'OpenJudge': OpenJudge, # MLE is still buggy so don't use it
 }
 
